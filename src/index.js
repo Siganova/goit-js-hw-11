@@ -12,7 +12,7 @@ let simpleLightBox = null;
 let page = 1;
 let perPage = 40;
 let q = '';
-let totalItem = 0;
+let totalPage = 0;
 
 searchFormRef.addEventListener('submit', onSubmit);
 loadMoreBtn.addEventListener('click', onLoadMore);
@@ -20,7 +20,7 @@ loadMoreBtn.addEventListener('click', onLoadMore);
 function onSubmit(e) {
     e.preventDefault();
 
-    q = e.currentTarget.elements.searchQuery.value;
+    q = e.currentTarget.elements.searchQuery.value.trim();
     loadMoreBtn.classList.add('is-hidden');
     if (!q) {
         Notiflix.Notify.failure("Please, fill in the field");
@@ -28,7 +28,7 @@ function onSubmit(e) {
     }
     resetPage();
     galleryRef.innerHTML = "";
-    totalItem = 0;
+    totalPage = 0;
     getData();
 }
 
@@ -44,19 +44,16 @@ function getData() {
             return;
         }
 
-        totalItem = totalItem + resp.data.hits.length;
+        totalPage = Math.ceil(resp.data.totalHits / perPage);
 
         if(page === 1){
             Notiflix.Notify.success(`Hooray! We found ${resp.data.totalHits} images.`);
         }
-
-        incrementPage();
-
         const markup = resp.data.hits.map(image => {
             return galleryItem(image);
         }).join('');
         galleryRef.insertAdjacentHTML('beforeend', markup);
-        loadMoreBtn.classList.remove('is-hidden', totalItem < resp.data.totalHits);
+        loadMoreBtn.classList.remove('is-hidden', page >= totalPage);
 
         if(!simpleLightBox){
             simpleLightBox = new SimpleLightbox('.gallery a');
@@ -64,11 +61,13 @@ function getData() {
             simpleLightBox.refresh();
         }
 
-        if ( totalItem === resp.data.totalHits) {
+        if ( page >= totalPage) {
             loadMoreBtn.classList.add('is-hidden');
             Notiflix.Notify.warning('We are sorry, but you have reached the end of search results.');
-            return
+            return;
         }
+
+        incrementPage();
     });
 }
 
